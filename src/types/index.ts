@@ -2,10 +2,17 @@ export interface User {
   id: string;
   name: string;
   age: number;
-  gender: Gender;
+  gender: string;
   bio?: string;
   photos: string[];
   avgRating: number;
+  phone?: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+  refreshToken?: string;
 }
 
 export type Gender =

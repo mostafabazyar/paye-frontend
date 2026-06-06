@@ -1,20 +1,27 @@
+// src/store/auth.store.ts
 import { create } from 'zustand';
-
-interface User {
-  token?: string;
-  [key: string]: unknown;
-}
+import { persist } from 'zustand/middleware';
+import { User } from '@/types';
 
 interface AuthState {
   user: User | null;
   token: string | null;
-  setUser: (user: User) => void;
+  isAuthenticated: boolean;
+  setAuth: (user: User, token: string) => void;
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: null,
-  setUser: (user) => set({ user, token: user?.token }),
-  logout: () => set({ user: null, token: null }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      setAuth: (user, token) => set({ user, token, isAuthenticated: true }),
+      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+    }),
+    {
+      name: 'auth-storage',
+    }
+  )
+);
