@@ -4,11 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "mock": "node mock-server.js",
+    "dev:full": "concurrently \"npm run mock\" \"npm run dev\"",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "mock": "node mock-server.mjs",
-    "dev:full": "concurrently \"npm run mock\" \"npm run dev\""
+    "start": "next start"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
