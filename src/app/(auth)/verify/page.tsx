@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { ControllerRenderProps, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { toast } from 'sonner'; // Updated to use direct sonner import
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form/form';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -45,27 +45,27 @@ export default function VerifyPage() {
       const res = await apiClient.post('/auth/verify', { phone, otp: data.otp });
       
       setAuth(res.user, res.token);
-      
-      if (res.user.name) {
+
+      if (res.user?.name) {
         router.push('/dashboard');
       } else {
         router.push('/profile-setup');
       }
       
-      toast.success("Welcome to Paye!"); // Updated toast syntax
-    } catch (error: any) {
-      toast.error("Invalid OTP", { description: error.message }); // Updated toast syntax
+      toast.success("Successfully logged in!");
+    } catch (error: unknown) {
+      toast.error((error as { message?: string }).message || "Invalid OTP");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Verify OTP</CardTitle>
-          <p className="text-sm text-muted-foreground">Enter the code sent to {phone}</p>
+          <CardTitle>Enter OTP</CardTitle>
+          <p className="text-sm text-muted-foreground">Sent to {phone}</p>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -73,14 +73,14 @@ export default function VerifyPage() {
               <FormField
                 control={form.control}
                 name="otp"
-                render={({ field }) => (
+                render={({ field }: { field: ControllerRenderProps<VerifyForm, 'otp'> }) => (
                   <FormItem>
                     <FormControl>
                       <Input 
                         placeholder="123456" 
                         maxLength={6} 
-                        className="text-center text-2xl tracking-widest" 
-                        ...field 
+                        className="text-center text-3xl tracking-[0.5em]" 
+                        {...field} 
                       />
                     </FormControl>
                     <FormMessage />
@@ -89,14 +89,14 @@ export default function VerifyPage() {
               />
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Verifying..." : "Verify OTP"}
+                {loading ? "Verifying..." : "Verify"}
               </Button>
             </form>
           </Form>
 
           <div className="text-center mt-4">
             {countdown > 0 ? (
-              <p className="text-sm text-muted-foreground">Resend in {countdown}s</p>
+              <p>Resend available in {countdown}s</p>
             ) : (
               <Button variant="link" onClick={() => router.push('/login')}>
                 Resend OTP
