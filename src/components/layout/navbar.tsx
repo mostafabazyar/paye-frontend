@@ -29,6 +29,10 @@ export default function Navbar() {
 
       {user ? (
         <div className="flex items-center gap-4">
+          <Button asChild variant="ghost">
+            <Link href="/explore">Explore</Link>
+          </Button>
+
           <div className="hidden md:flex items-center gap-2 text-sm text-slate-400">
             <span>Welcome back,</span>
             <span className="font-medium text-white">{user.name}</span>

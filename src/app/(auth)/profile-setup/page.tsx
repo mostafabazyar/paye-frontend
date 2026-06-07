@@ -43,7 +43,7 @@ export default function ProfileSetupPage() {
     setLoading(true);
     try {
       const res = await apiClient.post('/profile/setup', data);
-      setAuth(res.user, (user as unknown as { token?: string })?.token || ''); // Update user data
+      setAuth(res.user, res.token || ''); // Update user data with returned token
       toast.success("Profile Completed!");
       router.push('/dashboard');
     } catch (error: unknown) {
