@@ -19,6 +19,9 @@ const profileSetupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   age: z.number().min(16, "Must be at least 16").max(70, "Must be 70 or younger"),
   gender: z.enum(["male", "female", "other"]),
+  interestedIn: z.enum(["MEN", "WOMEN", "EVERYONE"]),
+  preferredSports: z.array(z.string()).default([]),
+  preferredSessionTypes: z.array(z.enum(["ONE_ON_ONE", "ONE_ON_MANY", "MANY_ON_MANY"])).default([]),
   bio: z.string().max(500).optional(),
 });
 
@@ -35,9 +38,19 @@ export default function ProfileSetupPage() {
       name: user?.name || '',
       age: user?.age || 25,
       gender: (user?.gender as "male" | "female" | "other") || "male",
+      interestedIn: (user?.interestedIn as "MEN" | "WOMEN" | "EVERYONE") || "EVERYONE",
+      preferredSports: user?.preferredSports || [],
+      preferredSessionTypes: user?.preferredSessionTypes || [],
       bio: user?.bio || '',
     },
   });
+
+  const sportOptions = ['Football', 'Basketball', 'Tennis', 'Swimming', 'Running', 'Cycling', 'Gym', 'Yoga', 'Boxing', 'Hiking', 'Badminton', 'Volleyball'] as const;
+  const sessionTypeOptions = [
+    { value: 'ONE_ON_ONE', label: '1:1 Session' },
+    { value: 'ONE_ON_MANY', label: 'Small Group' },
+    { value: 'MANY_ON_MANY', label: 'Open Session' },
+  ] as const;
 
   const onSubmit = async (data: ProfileSetupForm) => {
     setLoading(true);
@@ -45,7 +58,7 @@ export default function ProfileSetupPage() {
       const res = await apiClient.post('/profile/setup', data);
       setAuth(res.user, res.token || ''); // Update user data with returned token
       toast.success("Profile Completed!");
-      router.push('/dashboard');
+      router.push('/explore');
     } catch (error: unknown) {
       toast.error("Error", { description: (error as { message?: string }).message || "Something went wrong" });
     } finally {
@@ -112,7 +125,90 @@ export default function ProfileSetupPage() {
                     <FormMessage />
                   </FormItem>
                 )} />
+
+                <FormField control={form.control} name="interestedIn" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Interested in</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Who are you interested in?" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="MEN">Men</SelectItem>
+                        <SelectItem value="WOMEN">Women</SelectItem>
+                        <SelectItem value="EVERYONE">Everyone</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </div>
+
+              <FormField
+                control={form.control}
+                name="preferredSports"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Interested sports</FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {sportOptions.map((sport) => {
+                        const selected = (field.value || []).includes(sport);
+                        return (
+                          <Button
+                            key={sport}
+                            type="button"
+                            variant={selected ? 'default' : 'outline'}
+                            onClick={() => {
+                              const next = selected
+                                ? (field.value || []).filter((item) => item !== sport)
+                                : [...(field.value || []), sport];
+                              field.onChange(next);
+                            }}
+                            className="rounded-full"
+                          >
+                            {sport}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="preferredSessionTypes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred session style</FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {sessionTypeOptions.map((option) => {
+                        const selected = (field.value || []).includes(option.value);
+                        return (
+                          <Button
+                            key={option.value}
+                            type="button"
+                            variant={selected ? 'default' : 'outline'}
+                            onClick={() => {
+                              const next = selected
+                                ? (field.value || []).filter((item) => item !== option.value)
+                                : [...(field.value || []), option.value];
+                              field.onChange(next);
+                            }}
+                            className="rounded-full"
+                          >
+                            {option.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Bio */}
               <FormField control={form.control} name="bio" render={({ field }) => (

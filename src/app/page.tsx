@@ -14,7 +14,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/explore');
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCheckingAuth(true); // Only reveal landing if they're actually a guest

@@ -2,61 +2,47 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Home, Users, MessageCircle, Calendar, User, Settings, Heart 
+import {
+  Heart,
+  MessageCircle,
+  PlusCircle,
+  Search,
+  UserRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/dashboard', label: 'Discover', icon: Home },
-  { href: '/explore', label: 'Explore', icon: Users },
-  { href: '/create-listing', label: 'Create Listing', icon: Heart },
-  { href: '/requests', label: 'Requests', icon: Users },
-  { href: '/sessions', label: 'Sessions', icon: Calendar },
+  { href: '/create-listing', label: 'Create', icon: PlusCircle },
+  { href: '/requests', label: 'Requests', icon: Heart },
+  { href: '/explore', label: 'Explore', icon: Search },
   { href: '/chat', label: 'Messages', icon: MessageCircle },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/profile', label: 'Profile', icon: UserRound },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="w-72 border-r border-slate-800 bg-slate-950 h-full hidden lg:flex flex-col">
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center">
-            <Heart className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-3xl font-bold text-white tracking-tighter">Paye</span>
-        </div>
-
-        <nav className="space-y-2">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
-                  isActive 
-                    ? "bg-slate-800 text-white" 
-                    : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
-                )}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-
-      <div className="mt-auto p-6">
-        <Link href="/settings" className="flex items-center gap-3 text-slate-400 hover:text-slate-200">
-          <Settings className="w-5 h-5" />
-          Settings
-        </Link>
+    <div className="fixed bottom-[10px] left-1/2 z-50 w-[calc(100%-1rem)] -translate-x-1/2 rounded-[18px] border border-white/60 bg-white/75 shadow-[0_18px_45px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:w-1/2">
+      <div className="mx-auto flex items-center justify-between gap-1 px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+0.4rem)] sm:px-5">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[1.4rem] px-2 py-2 text-[11px] font-medium transition-all',
+                isActive
+                  ? 'bg-gradient-to-b from-slate-900 to-slate-600 text-white shadow-[0_14px_30px_rgba(15,23,42,0.26)]'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

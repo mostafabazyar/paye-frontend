@@ -3,6 +3,9 @@ export interface User {
   name: string;
   age: number;
   gender: string;
+  interestedIn?: 'MEN' | 'WOMEN' | 'EVERYONE';
+  preferredSports?: string[];
+  preferredSessionTypes?: string[];
   bio?: string;
   photos: string[];
   avgRating: number;

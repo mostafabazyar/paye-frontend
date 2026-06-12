@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dumbbell, LogOut, User, Settings } from 'lucide-react';
+import { Flame, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -17,41 +17,44 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="border-b border-slate-800 bg-slate-950 px-6 py-4 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-            <Dumbbell className="w-5 h-5 text-white" />
+    <nav className="sticky top-0 z-40 border-b border-rose-100 bg-white/90 px-4 py-4 shadow-[0_10px_30px_rgba(244,63,94,0.06)] backdrop-blur-xl sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+        <Link href="/explore" className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[1.2rem] bg-gradient-to-br from-slate-900 via-slate-700 to-slate-500 shadow-[0_16px_30px_rgba(15,23,42,0.18)]">
+            <Flame className="h-5 w-5 text-white" />
           </div>
-          <span className="text-2xl font-bold tracking-tight text-white">Paye</span>
-        </div>
+          <div>
+            <p className="text-lg font-semibold tracking-tight text-slate-900">Paye</p>
+            <p className="text-xs font-medium text-slate-500">Find your match</p>
+          </div>
+        </Link>
+
+        {user ? (
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Button asChild variant="secondary" className="hidden rounded-full bg-slate-100 text-slate-700 shadow-none hover:bg-slate-200 sm:inline-flex">
+              <Link href="/explore">Explore</Link>
+            </Button>
+
+            <div className="hidden items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-500 md:flex">
+              <span>Welcome back,</span>
+              <span className="font-semibold text-slate-900">{user.name}</span>
+            </div>
+
+            <Avatar className="h-11 w-11 cursor-pointer ring-2 ring-slate-100" onClick={() => router.push('/profile')}>
+              <AvatarImage src={user.photos?.[0]} />
+              <AvatarFallback>{user.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        ) : (
+          <Button asChild className="rounded-full bg-gradient-to-r from-slate-900 to-slate-600 text-white shadow-[0_16px_30px_rgba(15,23,42,0.18)] hover:from-slate-800 hover:to-slate-500">
+            <Link href="/login">Sign In</Link>
+          </Button>
+        )}
       </div>
-
-      {user ? (
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost">
-            <Link href="/explore">Explore</Link>
-          </Button>
-
-          <div className="hidden md:flex items-center gap-2 text-sm text-slate-400">
-            <span>Welcome back,</span>
-            <span className="font-medium text-white">{user.name}</span>
-          </div>
-
-          <Avatar className="cursor-pointer" onClick={() => router.push('/profile')}>
-            <AvatarImage src={user.photos?.[0]} />
-            <AvatarFallback>{user.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-
-          <Button variant="ghost" size="icon" onClick={handleLogout}>
-            <LogOut className="w-5 h-5" />
-          </Button>
-        </div>
-      ) : (
-        <Button asChild>
-          <Link href="/login">Sign In</Link>
-        </Button>
-      )}
     </nav>
   );
 }

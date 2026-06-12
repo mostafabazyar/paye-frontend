@@ -47,7 +47,7 @@ export default function VerifyPage() {
       setAuth(res.user, res.token);
 
       if (res.user?.name) {
-        router.push('/dashboard');
+        router.push('/explore');
       } else {
         router.push('/profile-setup');
       }

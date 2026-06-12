@@ -23,7 +23,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Find Your Hambash</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Find Your paye</h1>
           <p className="text-slate-400">People nearby who share your sports passion</p>
         </div>
 

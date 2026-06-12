@@ -12,28 +12,29 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    if (hasHydrated && (!isAuthenticated || !user)) {
       router.replace('/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, hasHydrated]);
 
   if (!isAuthenticated) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-950">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-white text-slate-700">Loading...</div>;
   }
 
   return (
-    <div className="flex h-screen bg-slate-950 overflow-hidden">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-auto p-4 md:p-8 bg-slate-950">
+    <div className="flex min-h-screen flex-col bg-white overflow-hidden">
+      <Navbar />
+
+      <div className="flex-1 overflow-hidden">
+        <main className="h-full overflow-auto px-4 py-5 pb-28 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>
+
+      <Sidebar />
     </div>
   );
 }

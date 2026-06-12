@@ -20,8 +20,6 @@ const getAuthHeaders = (): HeadersInit => {
     }
   }
 
-  console.log('DEBUG: Extracted Token:', token);
-
   return {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -33,6 +31,16 @@ export const apiClient = {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(res);
+  },
+
+  async put(endpoint: string, body: unknown) {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(body),
       credentials: 'include',
     });
     return handleResponse(res);

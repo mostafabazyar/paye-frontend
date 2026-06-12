@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form/form';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
@@ -16,25 +17,37 @@ type EditProfileForm = {
   name: string;
   phone: string;
   age?: number;
+  gender?: string;
+  interestedIn?: 'MEN' | 'WOMEN' | 'EVERYONE';
+  preferredSports?: string[];
+  preferredSessionTypes?: ('ONE_ON_ONE' | 'ONE_ON_MANY' | 'MANY_ON_MANY')[];
   bio?: string;
   location?: string;
 };
+
+const sportOptions = ['Football', 'Basketball', 'Tennis', 'Swimming', 'Running', 'Cycling', 'Gym', 'Yoga', 'Boxing', 'Hiking', 'Badminton', 'Volleyball'] as const;
+const sessionTypeOptions = [
+  { value: 'ONE_ON_ONE', label: '1:1 Session' },
+  { value: 'ONE_ON_MANY', label: 'Small Group' },
+  { value: 'MANY_ON_MANY', label: 'Open Session' },
+] as const;
 
 export default function EditProfilePage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const form = useForm<EditProfileForm>();
+  const { reset } = form;
 
   useEffect(() => {
     (async () => {
       try {
         const res = await apiClient.get('/profile/me');
-        form.reset(res.user);
-      } catch (e) {
+        reset(res.user);
+      } catch {
         toast.error('Failed to load profile');
       }
     })();
-  }, []);
+  }, [reset]);
 
   const onSubmit = async (data: EditProfileForm) => {
     setLoading(true);
@@ -105,6 +118,29 @@ export default function EditProfilePage() {
 
                   <FormField
                     control={form.control}
+                    name="interestedIn"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Interested in</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Who are you interested in?" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="MEN">Men</SelectItem>
+                            <SelectItem value="WOMEN">Women</SelectItem>
+                            <SelectItem value="EVERYONE">Everyone</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="location"
                     render={({ field }) => (
                       <FormItem>
@@ -117,6 +153,70 @@ export default function EditProfilePage() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="preferredSports"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Interested sports</FormLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {sportOptions.map((sport) => {
+                          const selected = (field.value || []).includes(sport);
+                          return (
+                            <Button
+                              key={sport}
+                              type="button"
+                              variant={selected ? 'default' : 'outline'}
+                              onClick={() => {
+                                const next = selected
+                                  ? (field.value || []).filter((item) => item !== sport)
+                                  : [...(field.value || []), sport];
+                                field.onChange(next);
+                              }}
+                              className="rounded-full"
+                            >
+                              {sport}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="preferredSessionTypes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preferred session style</FormLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {sessionTypeOptions.map((option) => {
+                          const selected = (field.value || []).includes(option.value);
+                          return (
+                            <Button
+                              key={option.value}
+                              type="button"
+                              variant={selected ? 'default' : 'outline'}
+                              onClick={() => {
+                                const next = selected
+                                  ? (field.value || []).filter((item) => item !== option.value)
+                                  : [...(field.value || []), option.value];
+                                field.onChange(next);
+                              }}
+                              className="rounded-full"
+                            >
+                              {option.label}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
