@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, SendHorizonal } from "lucide-react";
+import ChatSidebar from "@/components/chat/ChatSidebar";
+import {
+  ArrowLeft,
+  Mic,
+  SendHorizonal,
+  Smile,
+} from "lucide-react";
 import { createSocket } from "@/lib/socket";
 import { chatApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
@@ -29,10 +35,17 @@ type Conversation = {
 export default function ChatPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const { user, token } = useAuthStore();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showReactionsFor, setShowReactionsFor] = useState<string | null>(null);
+
   const socketRef = useRef<Socket | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: conversations = [] } = useQuery({
     queryKey: ["chat", "conversations"],
@@ -43,6 +56,7 @@ export default function ChatPage() {
   const conversation = conversations.find((item) => item.sessionId === sessionId);
   const partnerName = conversation?.partner?.name || "User";
 
+  // Load messages + socket
   useEffect(() => {
     if (!sessionId || !token) return;
 
@@ -59,16 +73,29 @@ export default function ChatPage() {
       );
     });
 
+    // Fake typing indicator (UI only)
+    socket.on("typing", () => {
+      setIsTyping(true);
+      setTimeout(() => setIsTyping(false), 1500);
+    });
+
     return () => {
       socket.off("new_message");
+      socket.off("typing");
       socket.disconnect();
       socketRef.current = null;
     };
   }, [sessionId, token]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Auto scroll
+useEffect(() => {
+    if (!messagesContainerRef.current) return;
+
+    messagesContainerRef.current.scrollTo({
+      top: messagesContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages, isTyping]);
 
   const sendMessage = () => {
     if (!text.trim() || !sessionId || !socketRef.current) return;
@@ -79,78 +106,147 @@ export default function ChatPage() {
     });
 
     setText("");
+    setReplyTo(null);
+  };
+
+  const handleSwipeReply = (msg: ChatMessage) => {
+    setReplyTo(msg);
+  };
+
+  const handleReaction = () => {
+    setShowReactionsFor(null);
   };
 
   return (
-    <div className="flex h-screen flex-col bg-white">
-      {/* Header */}
-      <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-xl">
-        <Link
-          href="/chat"
-          className="rounded-full p-2 text-slate-600 hover:bg-slate-100 transition"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="min-w-0">
-          <p className="truncate font-semibold text-slate-900 text-base">
-            {partnerName}
-          </p>
-          <p className="truncate text-xs text-slate-500">
-            {conversation?.profile?.title || "Approved match"}
-          </p>
+    <div className="flex h-screen bg-white">
+
+      {/* Sidebar (desktop only) */}
+      <ChatSidebar conversations={conversations} activeId={sessionId} />
+
+      {/* Chat Area */}
+      <div className="flex flex-col flex-1 relative bg-white pb-50">
+
+        {/* Header */}
+        <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-xl">
+          <Link
+            href="/chat"
+            className="md:hidden rounded-full p-2 text-slate-600 hover:bg-slate-100 transition"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-slate-900 text-base">
+              {partnerName}
+            </p>
+            <p className="truncate text-xs text-slate-500">
+              {conversation?.profile?.title || "Approved match"}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50">
-        {messages.map((msg, index) => {
-          const isMe = msg.senderId === user?.id;
-          const showName =
-            index === 0 || messages[index - 1].senderId !== msg.senderId;
+        {/* Messages */}
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50">
 
-          return (
-            <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-              {showName && (
-                <p className="mb-1 text-xs text-slate-500">
-                  {isMe ? "You" : msg.sender?.name || "User"}
-                </p>
-              )}
+          {messages.map((msg) => {
+            const isMe = msg.senderId === user?.id;
 
+            return (
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2 shadow-sm ${
-                  isMe
-                    ? "bg-black text-white rounded-br-none"
-                    : "bg-white text-slate-900 border border-slate-200 rounded-bl-none"
-                }`}
+                key={msg.id}
+                className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
               >
-                <p className="text-sm leading-relaxed">{msg.text}</p>
+                <div
+                  onClick={() => handleSwipeReply(msg)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setShowReactionsFor(msg.id);
+                  }}
+                  className={`max-w-[75%] rounded-2xl px-4 py-2 shadow-sm cursor-pointer active:scale-[0.98] transition ${
+                    isMe
+                      ? "bg-black text-white rounded-br-none"
+                      : "bg-white text-slate-900 border border-slate-200 rounded-bl-none"
+                  }`}
+                >
+                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                </div>
+
+                {showReactionsFor === msg.id && (
+                  <div className="flex gap-2 mt-1 bg-white shadow-md rounded-full px-3 py-1">
+                    {["❤️", "😂", "👍", "😮", "😢", "👎"].map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => handleReaction()}
+                        className="text-xl"
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <p className="mt-1 text-[10px] text-slate-400">
+                  {format(new Date(msg.createdAt), "p")}
+                </p>
               </div>
+            );
+          })}
 
-              <p className="mt-1 text-[10px] text-slate-400">
-                {format(new Date(msg.createdAt), "p")}
-              </p>
+          {isTyping && (
+            <div className="flex items-center gap-2 text-slate-500 text-sm">
+              <div className="flex gap-1">
+                <span className="animate-bounce">•</span>
+                <span className="animate-bounce delay-150">•</span>
+                <span className="animate-bounce delay-300">•</span>
+              </div>
+              typing…
             </div>
-          );
-        })}
+          )}
 
-        <div ref={scrollRef} />
-      </div>
+          <div ref={scrollRef} />
+        </div>
 
-      {/* Input Bar */}
-      <div className="sticky bottom-0 flex items-center gap-3 border-t border-slate-200 bg-white px-4 py-3">
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-slate-400 focus:outline-none"
-          placeholder="Type a message..."
-        />
-        <button
-          onClick={sendMessage}
-          className="rounded-full bg-black p-3 text-white shadow-md hover:bg-slate-900 transition"
-        >
-          <SendHorizonal className="h-4 w-4" />
-        </button>
+        {/* Reply preview */}
+        {replyTo && (
+          <div className="px-4 py-2 bg-white border-t border-slate-200 text-sm flex justify-between">
+            <span className="text-slate-600 truncate max-w-[80%]">
+              Replying to: {replyTo.text}
+            </span>
+            <button
+              onClick={() => setReplyTo(null)}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* Floating Input Bar */}
+        <div className="fixed md:static bottom-20 left-0 right-0 md:bottom-0 px-4 md:px-0">
+          <div className="bg-white shadow-xl rounded-full flex items-center gap-3 px-4 py-3 border border-slate-200">
+            <Smile className="text-slate-500" />
+
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              className="flex-1 bg-transparent outline-none text-sm"
+              placeholder="Message…"
+            />
+
+            {text.length === 0 ? (
+              <Mic className="text-slate-700" />
+            ) : (
+              <button
+                onClick={sendMessage}
+                className="rounded-full bg-black p-2 text-white"
+              >
+                <SendHorizonal className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
