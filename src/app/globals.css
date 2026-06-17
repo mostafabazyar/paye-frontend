@@ -130,6 +130,10 @@
   }
 }
 
-grouptag-h{
+.grouptag-h{
   height: calc(var(--spacing) * 15)!important;
+}
+
+.margin-auto{
+  margin: auto;
 }

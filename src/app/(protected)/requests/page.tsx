@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiClient } from '@/lib/api';
+import { getChatPath } from '@/lib/chat';
 import { toast } from 'sonner';
 import {
   CheckCircle2,
@@ -35,10 +38,16 @@ type Requester = {
   photos?: string[];
 };
 
+type Receiver = {
+  id?: string;
+  name?: string;
+};
+
 type RequestItem = {
   id: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | string;
   requester?: Requester;
+  receiver?: Receiver;
   profile?: RequestProfile;
   createdAt?: string;
   updatedAt?: string;
@@ -95,6 +104,7 @@ function getSportsLabel(sports?: string[] | string) {
 }
 
 export default function RequestsPage() {
+  const router = useRouter();
   const [updating, setUpdating] = useState<string | null>(null);
 
   const { data: received = [], refetch: refetchReceived } = useQuery({
@@ -120,12 +130,27 @@ export default function RequestsPage() {
       toast.success(`Request ${status.toLowerCase()}!`);
       refetchReceived();
       refetchSent();
+      if (status === 'APPROVED') {
+        router.push(getChatPath(id));
+      }
     } catch (err: unknown) {
       toast.error((err as { message?: string }).message || 'Failed to update');
     } finally {
       setUpdating(null);
     }
   };
+
+  const ChatButton = ({ requestId }: { requestId: number }) => (
+    <Button
+      asChild
+      className="h-11 w-full rounded-full bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-[0_14px_30px_rgba(15,23,42,0.14)]"
+    >
+      <Link href={getChatPath(requestId)}>
+        <MessageSquare className="mr-2 h-4 w-4" />
+        Open Chat
+      </Link>
+    </Button>
+  );
 
   const RequestPreview = ({ profile }: { profile?: RequestProfile }) => {
     const sports = getSportsLabel(profile?.sports);
@@ -189,44 +214,48 @@ export default function RequestsPage() {
             </div>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button
-              onClick={() => handleUpdate(request.id, 'APPROVED')}
-              disabled={updating === `${request.id}-APPROVED`}
-              className="h-11 rounded-full bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-[0_14px_30px_rgba(15,23,42,0.14)]"
-            >
-              {updating === `${request.id}-APPROVED` ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Accepting...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Accept
-                </>
-              )}
-            </Button>
+          {request.status === 'PENDING' ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button
+                onClick={() => handleUpdate(request.id, 'APPROVED')}
+                disabled={updating === `${request.id}-APPROVED`}
+                className="h-11 rounded-full bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-[0_14px_30px_rgba(15,23,42,0.14)]"
+              >
+                {updating === `${request.id}-APPROVED` ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Accepting...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Accept
+                  </>
+                )}
+              </Button>
 
-            <Button
-              onClick={() => handleUpdate(request.id, 'REJECTED')}
-              disabled={updating === `${request.id}-REJECTED`}
-              variant="secondary"
-              className="h-11 rounded-full border border-slate-200 bg-white text-slate-700 shadow-none hover:bg-slate-50"
-            >
-              {updating === `${request.id}-REJECTED` ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Rejecting...
-                </>
-              ) : (
-                <>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Reject
-                </>
-              )}
-            </Button>
-          </div>
+              <Button
+                onClick={() => handleUpdate(request.id, 'REJECTED')}
+                disabled={updating === `${request.id}-REJECTED`}
+                variant="secondary"
+                className="h-11 rounded-full border border-slate-200 bg-white text-slate-700 shadow-none hover:bg-slate-50"
+              >
+                {updating === `${request.id}-REJECTED` ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Rejecting...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Reject
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : request.status === 'APPROVED' ? (
+            <ChatButton requestId={request.id} />
+          ) : null}
         </CardContent>
       </Card>
     );
@@ -255,10 +284,18 @@ export default function RequestsPage() {
           <div className="flex items-center justify-between rounded-[1.2rem] border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <span className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-slate-400" />
-              Sent on
+              {request.status === 'APPROVED'
+                ? `Chat with ${request.receiver?.name || 'host'}`
+                : 'Sent on'}
             </span>
-            <span className="font-medium text-slate-900">{formatRequestDate(request.createdAt)}</span>
+            <span className="font-medium text-slate-900">
+              {request.status === 'APPROVED'
+                ? 'Match approved'
+                : formatRequestDate(request.createdAt)}
+            </span>
           </div>
+
+          {request.status === 'APPROVED' && <ChatButton requestId={request.id} />}
         </CardContent>
       </Card>
     );

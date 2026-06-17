@@ -86,3 +86,15 @@ async function handleResponse(res: Response) {
   }
   return res.json();
 }
+
+/*
+ * Chat API endpoints
+ */
+export const chatApi = {
+  async getConversations() {
+    return apiClient.get("/chat/conversations");
+  },
+  async getMessages(sessionId: string) {
+    return apiClient.get(`/chat/${sessionId}`);
+  },
+};
